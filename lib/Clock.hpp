@@ -21,7 +21,7 @@ public:
         return make_raii(*this, &Clock::stop, &Clock::start);
     }
 
-private:
+public:
     std::chrono::steady_clock::time_point tpStart_m;
     std::chrono::steady_clock::time_point tpStop_m;
 };

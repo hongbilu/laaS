@@ -1,13 +1,12 @@
-#include <lib/Clock.hpp>   
+#include <lib/Clock.hpp>
+#include <lib/RWLock.hpp>   
 #include <iostream>
-
+#include <memory>
+#include <string.h>
 using namespace std;
+
 int main(int argc, char** argv)
 {  
-    Clock clk;
-	clk.start();
-	cout<<"clock"<<endl;
-	clk.stop();
-    
+    std::cout<<"laaS"<<std::endl;
     return 0;  
 }  

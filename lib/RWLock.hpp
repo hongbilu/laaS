@@ -3,7 +3,7 @@
 #include <cassert>
 #include <atomic>
 #include <thread>
-#include <Prestera_Driver/raii.hpp>
+#include "raii.hpp"
 /*
  * atomic to implent read/write lock, unique write, share read, forbidden copy constructor and operator '='
  * when WRITE_FIRST is true, if there is thread waiting for read(m_writeWaitCount>0), writing thread will get the lock first
