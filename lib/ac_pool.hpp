@@ -39,34 +39,34 @@ struct align : public align_<num_bytes, false> { };
 
 //class dummy;
 
-// footprint<T> is a "unionable" type with the same alignment requirements
-// as type T as well as the same size.
-template <typename any_type>
-class footprint
-{
-    private:
-        // To avoid inaccessability warnings.
-        //friend class impl::dummy;
-        struct padded { char c; any_type t; };
-        static const unsigned align_factor = sizeof(padded) - sizeof(any_type);
-        union uu;
-        friend union uu;
+    // footprint<T> is a "unionable" type with the same alignment requirements
+    // as type T as well as the same size.
+    template <typename any_type>
+    class footprint
+    {
+        private:
+            // To avoid inaccessability warnings.
+            //friend class impl::dummy;
+            struct padded { char c; any_type t; };
+            static const unsigned align_factor = sizeof(padded) - sizeof(any_type);
+            union uu;
+            friend union uu;
 
-        union uu
-        {
-            char space[sizeof(any_type)];
-            typename align<align_factor>::type a;
-        };
+            union uu
+            {
+                char space[sizeof(any_type)];
+                typename align<align_factor>::type a;
+            };
 
-        uu u;
-};
+            uu u;
+    };
 
-    template <class user_entry, typename index>
+    template <class user_entry, typename T_IndexType>
     struct entry
     {
         union
         {
-            index link;
+            T_IndexType link;
             footprint<user_entry> ue;
         };
     };
@@ -92,39 +92,42 @@ class footprint
 // 'index' is some integral type, which can hold any value in the
 // range from 0 to the number of entries in the pool.
 //
-template <class user_entry, typename arr_type, typename T_IndexType = unsigned>
+template <class user_entry, typename arr_type, typename T_IndexType = unsigned int>
 class base_pool
 {
     public:
-
     // If, for an instance of base_pool, the array of pool entries must
     // be defined by the user code external to the base_pool instance,
     // 'entry' is the type the array elements must have.
-        typedef impl::entry<user_entry, T_IndexType> entry;
-        static T_IndexType end(void)     { return(static_cast<T_IndexType>(~ static_cast<T_IndexType>(0))); }
+        typedef impl::entry<user_entry, T_IndexType> T_UserEntry;
+        static T_IndexType end(void)     { return (static_cast<T_IndexType>(~ static_cast<T_IndexType>(0))); }
 
     public:
         class stack_abs
         {
             public:
-                arr_type arr;
-                typedef T_IndexType handle;
-                void set_next(handle h, handle lh) { arr[h].link = lh; }
-                handle get_next(handle h) { return(arr[h].link); }
-                static handle null(void) { return(end()); }
+                arr_type m_array;
+                typedef T_IndexType T_IdxType;
+                void set_next(T_IndexType h, T_IndexType lh) {
+                    m_array[h].link = lh;
+                }
+                T_IndexType get_next(T_IndexType h) {
+                    return(m_array[h].link); 
+                }
+                static T_IndexType null(void) { return(end()); }
         };
-
         class avail_type : public stack<stack_abs>
         {
             public:
-                entry & operator [] (T_IndexType idx) { return(arr[idx]); }
-                using stack<stack_abs>::arr;
+                T_UserEntry & operator [] (T_IndexType idx) { return(m_array[idx]); }
+                using stack<stack_abs>::m_array;
         };
-
         void free_all(T_IndexType num_entries)
         {
             while (num_entries--)
+            {
                 avail_m.push_front(num_entries);
+            }
         }
 
         void init(T_IndexType num_entries)
@@ -143,16 +146,16 @@ class base_pool
       // if there are no avail_mable entries.
       T_IndexType alloc(void)
       {
-          auto i = avail_m.front();
+          auto i = avail_m.alloc();
           if (i != end())
           {
-              avail_m.pop_front();
+              //avail_m.pop_front();
 
           // Use placement new to execute constructor for allocated entry.
-          new (&(avail_m[i].ue)) user_entry;
-        }
-      return(i);
-    }
+              new (&(avail_m[i].ue)) user_entry;
+          }
+          return(i);
+      }
 
       // Make avail_mable a previously-allocated entry.
       void free(T_IndexType i)
@@ -193,7 +196,6 @@ template <class user_entry, typename T_IndexType, T_IndexType num_entries>
 class pool :  public base_pool<user_entry, typename impl::pool_arr<user_entry, T_IndexType, num_entries>::type, T_IndexType>
 {
     protected:
-
         typedef base_pool<user_entry, typename impl::pool_arr<user_entry, T_IndexType, num_entries>::type, T_IndexType> super;
 
     public:
